@@ -1,11 +1,10 @@
-""" Tool to help in job search.
+""" Tool to explore possible culture difference San Francisco vs Seattle vs New York etc...
    1) Scrap list of job offers from indeed and reviews of the company
-   2) for each job, scrap the reviews for the company from glassdoor
    3) store all info in a mongoDB database (noSQL)
    4) tools to explore the data(vizualization and histograms)
 """
 
-# ADD a function to get salary as well #
+# to do: a function to get salary as well #
 
 
 import datetime
@@ -24,7 +23,7 @@ def build_search_url(keywords, location):
     query = "/jobs?"
     keyword_filter = "q", keywords
     location_filter = "l", location
-    date_filter = 'fromage', 'last' # only get the latest postings
+    date_filter = 'fromage', '15'  #'last' # only get the latest postings
     return build_url(base_url + query, keyword_filter, location_filter, date_filter)
 
 def parse_xpath(xpath, type=unicode, unique=True):
@@ -33,7 +32,8 @@ def parse_xpath(xpath, type=unicode, unique=True):
         #print "No elements found by xpath."
         return ''
     if unique and len(xpath) > 1:
-        print "xpath expected 1 element, but found:", str(xpath)
+        pass
+#        print "xpath expected 1 element, but found:", str(xpath)
 
     if unique:
         return type(xpath[0])
@@ -68,7 +68,12 @@ def parse_job(job,exclude_kws):
 
     requirement_kw = 'no'
     if exclude_kws != None:
-      job_ad_html = html.fromstring(requests.get(base_url + job_url).text)
+      try:
+        job_ad_html = html.fromstring(requests.get(base_url + job_url).text)
+      except:
+        return {'job_url':job_url, 'job_title':job_title, 'company':company,
+            'location':location, 'review_url':review_url, 'job_date':job_date, 'excluded_kw':requirement_kw}
+
       html_string = job_ad_html.xpath("string()")
       for kw in exclude_kws:
         if kw.lower() in html_string.lower():
@@ -82,6 +87,7 @@ def get_jobs(keywords, location, jobs_db, max_pages=1,exclude_kws=None):
   tree = html.fromstring(requests.get(build_search_url(keywords, location)).text)
 
   jobs = []
+  count = 0
   for i in range(max_pages):
       """create a list of all the div tags containing the JobPosting word"""
       jobs_divs = tree.xpath('//div[contains(@itemtype,"JobPosting")]')
@@ -89,6 +95,8 @@ def get_jobs(keywords, location, jobs_db, max_pages=1,exclude_kws=None):
       #for each tag, cast the json dictionary containing the relevant data into a mongoDB database
         p_j = parse_job(job,exclude_kws)
         jobs_db.insert(p_j)
+        count += 1
+        print count
         jobs.append(parse_job(job,exclude_kws)) #this is what is shown to user when she requests results
 
       next_page = tree.xpath('//div[contains(@class,"pagination")]//span[contains(text(),"Next")]/../../@href')
@@ -156,9 +164,12 @@ def get_all_reviews(review_url, reviews_db, max_pages=100):
 def get_all_company_reviews(jobs_list, reviews_db, max_pages=100):
   """take a list of jobs (obtained from keyword search) and obtain url for reviews of the companies"""
   visited_urls = []
+  count = 0
   for job in jobs_list:
     url = job["review_url"]
     if not url or url in visited_urls: continue
     get_all_reviews(url, reviews_db, max_pages)
     visited_urls.append(url)
+    count += 1
+    print count
   return
