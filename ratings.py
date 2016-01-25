@@ -59,7 +59,7 @@ def average_rating(location):
           rating.append(float(value[0]))
   avg = np.mean(rating)
   std = np.std(rating)
-  hist = np.histogram(rating,bins=5)
+  hist = np.histogram(rating,bins=5,density=True)
   return avg,std,hist
 
 def define_stopwords():
@@ -135,102 +135,3 @@ def document_for_LDA(corpus,stop):
   text_matrix = [dictionary.doc2bow(text) for text in texts]
   return text_matrix, dictionary
 
-
-######################################################################################
-######################################################################################
-
-stop = define_stopwords()
-
-#dictionary of reviews for a specific company
-github = gather_company_reviews('GitHub')
-salesforce = gather_company_reviews('Salesforce')
-
-text_matrix_github,dictionary_github = document_for_LDA(github,stop)
-text_matrix_salesforce,dictionary_salesforce = document_for_LDA(salesforce,stop)
-
-# generate LDA model
-ldamodel_github = gensim.models.ldamodel.LdaModel(text_matrix_github, num_topics=2, id2word = dictionary_github, passes=5)
-ldamodel_salesforce = gensim.models.ldamodel.LdaModel(text_matrix_salesforce, num_topics=2, id2word = dictionary_salesforce, passes=5)
-
-sys.exit()
-
-github_corpus = create_corpus(github,stop)
-top_50_github = heapq.nlargest(50,github_corpus.items(),key=lambda x:x[1])
-show_wordcloud(github_corpus,0)
-
-sys.exit()
-
-# dictionary of reviews for each location
-SanFran = gather_reviews('San Francisco')
-Seattle = gather_reviews('Seattle')
-Portland = gather_reviews('Portland')
-CA = gather_reviews(', CA')
-WA = gather_reviews(', WA')
-OR = gather_reviews(', OR')
-
-#corpus for each location
-
-text_matrix_SF,dictionary_SF = document_for_LDA(SanFran,stop)
-ldamodel_SF = gensim.models.ldamodel.LdaModel(text_matrix_SF, num_topics=2, id2word = dictionary_SF, passes=4)
-
-text_matrix_S,dictionary_S = document_for_LDA(Seattle,stop)
-ldamodel_S = gensim.models.ldamodel.LdaModel(text_matrix_S, num_topics=2, id2word = dictionary_S, passes=4)
-
-
-sys.exit()
-
-SanFran_corpus = create_corpus(SanFran,stop)
-Seattle_corpus = create_corpus(Seattle,stop)
-Portland_corpus = create_corpus(Portland,stop)
-CA_corpus = create_corpus(CA,stop)
-WA_corpus = create_corpus(WA,stop)
-OR_corpus = create_corpus(OR,stop)
-
-#display wordcloud
-top_50_SanFran = heapq.nlargest(50,SanFran_corpus.items(),key=lambda x:x[1])
-cut = 1   #top words are similar (work...), try to get differences for less frequent words
-show_wordcloud(SanFran_corpus,cut)
-
-top_50_Seattle = heapq.nlargest(50,Seattle_corpus.items(),key=lambda x:x[1])
-show_wordcloud(Seattle_corpus,cut)
-
-top_50_Portland = heapq.nlargest(50,Portland_corpus.items(),key=lambda x:x[1])
-show_wordcloud(Portland_corpus,cut)
-
-sys.exit()
-
-SanFran_avg, SanFran_std, SanFran_hist = average_rating(SanFran)
-SanFran_avg = round(SanFran_avg,1)
-plt.bar(SanFran_hist[1][:-1],SanFran_hist[0])
-plt.title('San Francisco average rating: %s' %SanFran_avg)
-plt.show() 
-
-Seattle_avg, Seattle_std, Seattle_hist = average_rating(Seattle)
-Seattle_avg = round(Seattle_avg,1)
-plt.bar(Seattle_hist[1][:-1],Seattle_hist[0])
-plt.title('Seattle average rating: %s' %Seattle_avg)
-plt.show() 
-
-Portland_avg, Portland_std, Portland_hist = average_rating(Portland)
-Portland_avg = round(Portland_avg,1)
-plt.bar(Portland_hist[1][:-1],Portland_hist[0])
-plt.title('Portland average rating: %s' %Portland_avg)
-plt.show() 
-
-CA_avg, CA_std, CA_hist = average_rating(CA)
-CA_avg = round(CA_avg,1)
-plt.bar(CA_hist[1][:-1],CA_hist[0])
-plt.title('CAlifornia average rating: %s' %CA_avg)
-plt.show() 
-
-WA_avg, WA_std, WA_hist = average_rating(WA)
-WA_avg = round(WA_avg,1)
-plt.bar(WA_hist[1][:-1],WA_hist[0])
-plt.title('Washington average rating: %s' %WA_avg)
-plt.show() 
-
-OR_avg, OR_std, OR_hist = average_rating(OR)
-OR_avg = round(OR_avg,1)
-plt.bar(OR_hist[1][:-1],OR_hist[0])
-plt.title('Oregon average rating: %s' %OR_avg)
-plt.show() 
